@@ -135,7 +135,11 @@ now <- grepl("akt.zip",file,fixed=TRUE) || grepl("now.zip",file,fixed=TRUE) ||
        grepl("row.zip",file,fixed=TRUE)
 # /CDC/derived_germany/soil/daily/historical/derived_germany_soil_daily_historical_1001.txt.gz
 deriv <- grepl("derived_germany",file,fixed=TRUE)
+<<<<<<< HEAD
 selmeta <- which(grepl(".zip", file) & fileIndex$per!="meta_data" & !now & !deriv)
+=======
+selmeta <- which(fileIndex$per!="meta_data" & !now & !deriv)
+>>>>>>> 3f2c31e407408b0cbbe58c036fa21f17d58c6bf5
 filesel <- file[selmeta]
 filesel <- sub("wetter_tageswerte_RR", "wetter_tageswerte|RR", filesel, fixed=TRUE)
 filesel <- sub("extrema_temp", "extrema|temp", filesel, fixed=TRUE)
