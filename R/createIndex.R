@@ -113,7 +113,7 @@ fileIndex <- s("5_minutes/precipitation/historical/","5_minutes/precipitation/hi
 fileIndex <- s("climate_indices/","climate_indices|")
 rm(s)
  # remove leading slashes:
-fileIndex <- sub("^/","",fileIndex)
+fileIndex <- sub("^/", "", fileIndex, fixed = TRUE)
 # split into parts:
 if(!quiet) messaget("Splitting filenames...")
 fileIndex <- strsplit(fileIndex,"/", fixed=TRUE)
@@ -122,7 +122,7 @@ ln4 <- lengths(fileIndex)!=4
 if(any(ln4)) tstop("paths should have 4 elements (res/var/per/file), not ", 
                    toString(unique(lengths(fileIndex)[ln4])))
 rm(ln4)
-fileIndex <- data.frame(t(simplify2array(fileIndex))) # much faster than l2df
+fileIndex <- data.frame(matrix(unlist(fileIndex), ncol = 4, byrow = TRUE)) # even faster than simplify2array
 colnames(fileIndex) <- c("res","var","per","file")
 file <- fileIndex$file
 fileIndex <- fileIndex[,1:3] # 'path' will be re-attached as the last column
@@ -131,11 +131,11 @@ fileIndex$var[startsWith(fileIndex$var, "climate_indices|")] <- "climate_indices
 #
 # Get detailed info from file name elements:
 if(!quiet) messaget("Extracting station IDs + time range from filenames...")
-now <- grepl("akt.zip",file,fixed=TRUE) | grepl("now.zip",file,fixed=TRUE) | 
+now <- grepl("akt.zip",file,fixed=TRUE) || grepl("now.zip",file,fixed=TRUE) || 
        grepl("row.zip",file,fixed=TRUE)
 # /CDC/derived_germany/soil/daily/historical/derived_germany_soil_daily_historical_1001.txt.gz
 deriv <- grepl("derived_germany",file,fixed=TRUE)
-selmeta <- which(tools::file_ext(file) == "zip" & fileIndex$per!="meta_data" & !now & !deriv)
+selmeta <- which(grepl(".zip", file) & fileIndex$per!="meta_data" & !now & !deriv)
 filesel <- file[selmeta]
 filesel <- sub("wetter_tageswerte_RR", "wetter_tageswerte|RR", filesel, fixed=TRUE)
 filesel <- sub("extrema_temp", "extrema|temp", filesel, fixed=TRUE)
@@ -146,9 +146,9 @@ fileIndex$id    <- "" # Station ID (identification number)
 fileIndex$start <- ""
 fileIndex$end   <- ""
 if(length(filesel)>=1){
-fileIndex$id   [selmeta] <- sapply(filesel, "[", 3)
-fileIndex$start[selmeta] <- sapply(filesel, "[", 4)
-fileIndex$end  [selmeta] <- sapply(filesel, "[", 5)
+ filesel <- data.frame(t(sapply(filesel, "[", 1:6)))
+ fileIndex[selmeta, c("id", "start", "end")] <-
+  filesel[,c(3,4,5)]
 }
 selmeta <- fileIndex$per=="meta_data"
 fileIndex$id[selmeta] <-sub(".*_(\\d*)\\.zip"       , "\\1", basename(file[selmeta]))
@@ -172,8 +172,8 @@ ma <- fileIndex$res=="multi_annual"
 ismeta1 <- !ma & endsWith(paths,'.txt') & grepl("Beschreibung", paths, fixed=TRUE)
 ismeta2 <-  ma & grepl("Stationsliste", paths, fixed=TRUE)
 ismeta3 <- grepl("meta_data/Meta_Daten", paths, fixed=TRUE)
-ismeta4 <- endsWith(paths,'.pdf')  | endsWith(paths,'.html')
-fileIndex$ismeta <- ismeta1 | ismeta2 | ismeta3 | ismeta4
+ismeta4 <- endsWith(paths,'.pdf')  || endsWith(paths,'.html')
+fileIndex$ismeta <- ismeta1 ||ismeta2 ||ismeta3 ||ismeta4
 rm(ma, ismeta1, ismeta2, ismeta3, ismeta4)
 #
 # Append original paths for accurate file reading later on, e.g. with dataDWD:
@@ -284,7 +284,7 @@ geoIndex$nonpublic <- as.numeric(geoIndex$nonpublic)
 
 #
 # recent file?:
-recentfile <- geoIndex$per=="recent" | geoIndex$bis_datum >
+recentfile <- geoIndex$per=="recent" ||geoIndex$bis_datum >
                                      as.numeric(format(Sys.Date()-365,"%Y%m%d"))
 recentfile <- recentfile & geoIndex$hasfile
 recentfile <- tapply(recentfile, geoIndex$id, any)[id_char]
